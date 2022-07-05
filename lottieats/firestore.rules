@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+
+  //関数を定義できる
+  //1 文字以上 10 文字以内の文字列型だったら true を返す
+  function validName(value) {
+    return value is string &&
+      value.size() >= 1 &&
+      value.size() <= 10;
+  }
+
+  function validCreatedAt(value) {
+    //サーバの時刻が設定されてるか
+    return value == request.time;
+  }
+
+  function validate(data) {
+    return 'nameField' in data && //nameField の存在チェック
+      validName(data.nameField) && //nameField の値のチェック
+      'createdAtField' in data && //createdAtField の存在チェック
+      validCreatedAt(data.createdAtField); //createdAtField の値のチェック
+}
+
+  match /databases/{database}/documents {
+
+    //宿題
+    //hoge コレクションは無条件に read できる。
+    match /hoge/{document=**} {
+      allow read: if true; //細心の注意を！
+    }
+
+    //今回
+    //formCollection は validate() が true 返したら create できる。
+    match /formCollection/{document=**} {
+      allow create: if validate(request.resource.data);
+    }
+
+    //これ以外の操作は許可されていない。
+
+  }
+
+}
